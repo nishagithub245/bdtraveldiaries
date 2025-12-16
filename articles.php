@@ -9,19 +9,20 @@
 <body>
 
 
-<div class="username-container">
+<div class="username-section" id="username-section">
 <h2 class="username-title">Welcome to ‘Bangladesh Travel Diaries’!</h2>
 
 <form action="#" method="post" autocomplete="off" class="username-form" onsubmit="return false;">
 <label for="name">Enter your username:</label>
-<input type="text" id="name" placeholder="Type your username here" autocomplete="off"/>
+<input type="text" id="username" placeholder="Type your username here" autocomplete="off"/>
 <button type="submit" id="signin-btn">Sign in</button>
 </form>
 </div>
 
 
 
-<div class="articles-container" style="display: none;">
+<div class="articles-container hidden" id="articles-section">
+
 <h2 class="article-title">BANGLADESH TRAVEL DIARIES</h2>
 
 
@@ -67,9 +68,25 @@
         </p>
         </div>
 
-      <div class="second-article-flag">
+     <div class="article-flagging">
         <button class="flag-btn">Flag</button>
+
+
+
+        <div class="flag-options" style="display: none;">
+        <div class="flag-options-content">
+         <label><input type="checkbox"> Abusive</label><br>
+            <label><input type="checkbox"> Spam</label><br>
+            <label><input type="checkbox"> Copyrighted</label><br>
 </div>
+           <div class="flag-options-symbols">
+             <button class="close-flag">X</button>
+            <button class="report-btn">Report</button>
+          
+            </div>
+           
+        </div>
+      </div>
 </div>
 
 
@@ -78,7 +95,7 @@
 
     <div class="post-header">
     <label>Post a new article:</label>  
-    <input type="text" id="name" placeholder="Enter your article title here">
+    <input type="text" id="article-title" placeholder="Enter your article title here">
     <p>Signed in as: <span id="signed-user">[username]</span></p>
     </div>
     
@@ -90,10 +107,11 @@
   </div>
    
 </div>
-
-
-
-
 </div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="script.js"></script>
+
+
 </body>
 </html>
