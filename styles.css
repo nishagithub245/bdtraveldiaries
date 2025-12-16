@@ -9,10 +9,11 @@ body {
     width: 100vw;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    /* justify-content: center; */
+     justify-content: flex-start;
     align-items: center;
 
-    
+    /* colour gradient styling */
     --bg-color: #74ff0393; 
     --line-color: #d4ff39; 
     --stripe-height: 40px; 
@@ -33,12 +34,12 @@ body {
    
     
     
-
-.main-container{
+/* username section styling */
+.username-container{
 
   margin-bottom:250px;
 }
-.title{
+.username-title{
   
   color: rgba(1, 41, 1, 0.904) ;
   margin-left: 160px;
@@ -78,5 +79,210 @@ body {
     border : 1px solid rgba(0, 0, 0, 0.856);
     border-radius: 5px;
     cursor: pointer;
-    font-weight: bold;
+    /* font-weight: bold; */
   }
+
+
+
+  /* -------------------------------- */
+
+/* article section styling */
+
+.articles-container {
+  width: 800px;
+}
+
+
+.article-title{
+  color: rgba(1, 41, 1, 0.904) ;
+  margin-left: 180px;
+
+
+}
+  .first-article {
+    width:760px;
+    background: #cfec89;
+    box-shadow: #313525;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    color:rgba(1, 41, 1, 0.904);
+    display:flex;
+justify-content:space-between;
+    align-items: flex-start;
+    
+}
+.first-article-content {
+  font-size: smaller;
+}
+
+.flag-btn{
+    padding: 10px 20px;
+    background-color: rgba(1, 41, 1, 0.904);
+    color: white;
+    border : 1px solid rgba(0, 0, 0, 0.856);
+    border-radius: 5px;
+    cursor: pointer;
+    /* font-weight: bold; */
+    margin-left:170px;
+}
+.flag-options {
+    
+    height:90px;
+    width:190px; 
+    background: #fff;
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 10px;;
+    font-weight: bold;
+    display:flex;
+    justify-content:space-between;
+    align-items: flex-start;
+   
+    
+   
+}
+/* left side */
+.flag-options-content {
+  display: flex;
+  flex-direction: column;
+  gap:0.1px;
+  font-size:14px  ;
+}
+
+/* right side */
+.flag-options-symbols {
+  display: flex;
+  flex-direction:column;
+  align-items: flex-end;
+  gap: 60px;
+}
+
+
+/* X button */
+.close-flag{
+  color: black;
+  
+  border:none;
+  background:none;
+  font-weight: 700;
+  cursor: pointer;
+  line-height:0.1; 
+  font-size:18px; 
+  
+}
+
+.report-btn{
+    padding: 10px 20px;
+    background-color: rgba(1, 21, 43, 0.904);
+    color: white;
+    border : 1px solid rgba(0, 0, 0, 0.856);
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right:0.1px;
+    /* margin-bottom:0.5px; */
+    
+}
+
+/* second article */
+
+.second-article {
+  width:785px;
+  background: #cfec89;
+box-shadow: #313525;
+    display:flex;
+    justify-content:space-between;
+    align-items: flex-start;
+    
+}
+.second-article-content{
+   
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    color:rgba(1, 41, 1, 0.904);
+    font-size: smaller;
+
+}
+.second-article-flag{
+    margin-right:18px;
+    margin-top: 10px;
+}
+
+/* .post-article input,
+.post-article textarea {
+    width: 100%;
+    margin-bottom: 8px;
+} */
+
+
+
+/* ----------------------- */
+
+/* post article styling */
+.post-article {
+  width:95%;
+  
+  padding: 12px 16px;
+  border-radius: 6px;
+  /* font-family: Arial, sans-serif; */
+}
+
+/* TOP ROW */
+.post-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+
+.post-header label{
+  color: rgba(1, 41, 1, 0.904) ;
+  font-weight: 700;
+  /* font: optional; */
+}
+
+.post-header input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #333;
+}
+.post-header input::placeholder {
+   color:rgb(94, 139, 34);
+  }
+
+
+.post-header p{
+  font-weight: bold;
+   color: rgba(1, 41, 1, 0.904) ;
+}
+
+
+/* BOTTOM ROW */
+.post-body {
+  display: flex;
+  gap:8px;
+}
+
+.post-body textarea {
+  flex: 1;
+  font-family: Arial, sans-serif;
+  resize: none;
+  padding:8px;
+  border-radius: 6px;
+  border: 1px solid black;
+   color:rgb(94, 139, 34);
+}
+
+.post-body button {
+    padding: 10px 20px;
+    background-color: rgba(1, 41, 1, 0.904);
+    color: white;
+    border : 1px solid rgba(0, 0, 0, 0.856);
+    border-radius: 5px;
+    cursor: pointer;
+    /* font-weight: bold; */
+    /* margin-left:170px; */
+}
