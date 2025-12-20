@@ -1,24 +1,24 @@
 <?php
-
 require 'db_connection.php';
 
-
-
-
-$username = $_POST['username'];
-$articletext = $_POST['articletext'];
+// Get POST data safely
+$username = $_POST['username'] ?? '';
+$articletext = $_POST['articletext'] ?? '';
 $time = date("Y-m-d H:i:s");
 
-$stmt = $conn->prepare(
-  "INSERT INTO articles (username, articletext, publishtime)
-   VALUES (?, ?, ?)"
-);
+if($username && $articletext) {
+    $stmt = $conn->prepare("INSERT INTO articles (username, articletext, publishtime) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $username, $articletext, $time);
 
-$stmt->bind_param("sss", $username, $articletext, $time);
-$stmt->execute();
+    if($stmt->execute()) {
+        echo "success";
+    } else {
+        echo "error";
+    }
 
-echo "success";
+    $stmt->close();
+} else {
+    echo "error";
+}
 
-
-
-?>
+$conn->close();
