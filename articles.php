@@ -102,8 +102,8 @@
    
 
  <div class="post-body">
-  <textarea placeholder="Type your article here"></textarea>
-  <button>Post</button>
+  <textarea id="article-text" placeholder="Type your article here"></textarea>
+  <button id="post-btn">Post</button>
   </div>
    
 </div>
