@@ -142,18 +142,17 @@ justify-content:space-between;
     margin-left:170px;
 }
 .flag-options {
-    
-    height:90px;
-    width:190px; 
-    background: #fff;
-    padding: 10px;
-    border: 1px solid black;
-    border-radius: 10px;;
-    font-weight: bold;
-    display:flex;
-    justify-content:space-between;
-    align-items: flex-start;
-    display: none; /* Initially hidden */
+
+  position: relative;
+  height:120px;
+  width: 200px;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 6px;
+  font-weight: bold;
+  padding: 10px;
+  display: none;
+  box-sizing: border-box;
    
     
    
@@ -162,41 +161,45 @@ justify-content:space-between;
 .flag-options-content {
   display: flex;
   flex-direction: column;
-  gap:0.1px;
-  font-size:14px  ;
+  gap:2px;
+  font-size: 14px;
+  margin-right: 40px;
 }
 
 /* right side */
 .flag-options-symbols {
+   position: absolute;
+  top: 6px;
+  right: 8px;
+  bottom:10px;
   display: flex;
-  flex-direction:column;
+  flex-direction: column;
+  justify-content: space-between;
   align-items: flex-end;
-  gap: 60px;
+  gap: 0;
 }
 
 
 /* X button */
 .close-flag{
-  color: black;
-  
-  border:none;
-  background:none;
-  font-weight: 700;
+  background: none;
+  border: none;
+  color: #000;
+  font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
- 
-  font-size:18px; 
+  line-height: 1;
   
 }
 
 .report-btn{
-    padding: 10px 20px;
-    background-color: rgba(1, 21, 43, 0.904);
-    color: white;
-    border : 1px solid rgba(0, 0, 0, 0.856);
-    border-radius: 5px;
-    cursor: pointer;
-    margin-right:0.1px;
-    /* margin-bottom:0.5px; */
+    background-color: #1a3e7b;
+  color: #fff;
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
     
 }
 
@@ -205,10 +208,10 @@ justify-content:space-between;
 .second-article {
   width:785px;
   background: #cfec89;
-box-shadow: #313525;
-    display:flex;
-    justify-content:space-between;
-    align-items: flex-start;
+  box-shadow: #313525;
+  display:flex;
+  justify-content:space-between;
+  align-items: flex-start;
     
 }
 .second-article-content{
@@ -223,6 +226,7 @@ box-shadow: #313525;
 .second-article-flag{
     margin-right:18px;
     margin-top: 10px;
+    margin-left: 170px;
 }
 
 /* .post-article input,
