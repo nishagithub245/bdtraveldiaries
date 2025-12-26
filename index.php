@@ -25,7 +25,7 @@
 
   <!-- STATIC ARTICLES -->
   <div id="static-articles">
-    <div class="first-article">
+    <div class="first-article" data-articlenumber="12">
       <div class="first-article-content">
         <h3>Kayaking in Thanchi</h3>
         <p class="meta">raihan_ahmed | 21/02/2017 – 10:04:33 GMT</p>
@@ -93,7 +93,9 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="script.js"></script>
+  
+  
+   <script src="script.js"></script>
 
 </body>
 </html>

@@ -1,24 +1,17 @@
 <?php
 require 'db_connection.php';
 
-// Get POST data safely
-$username = $_POST['username'] ?? '';
-$articletext = $_POST['articletext'] ?? '';
-$time = date("Y-m-d H:i:s");
+$username = $_POST['username'];
+$articletext = $_POST['articletext'];
 
-if($username && $articletext) {
-    $stmt = $conn->prepare("INSERT INTO articles (username, articletext, publishtime) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $username, $articletext, $time);
+$stmt = $conn->prepare("INSERT INTO articles (username, articletext, publishtime) VALUES (?, ?, NOW())");
+$stmt->bind_param("ss", $username, $articletext);
 
-    if($stmt->execute()) {
-        echo "success";
-    } else {
-        echo "error";
-    }
-
-    $stmt->close();
+if ($stmt->execute()) {
+    $newID = $stmt->insert_id;
+    echo json_encode(['status' => 'success', 'id' => $newID]);
 } else {
-    echo "error";
+    echo json_encode(['status' => 'error']);
 }
-
+$stmt->close();
 $conn->close();

@@ -3,15 +3,25 @@ require 'db_connection.php';
 
 header('Content-Type: application/json');
 
-$result = $conn->query("SELECT username, articletext, publishtime FROM articles ORDER BY publishtime DESC");
+$sql = "
+SELECT 
+    a.articlenumber,
+    a.username,
+    a.articletext,
+    a.publishtime,
+    COUNT(f.flagnumber) AS flag_count
+FROM articles a
+LEFT JOIN flags f ON a.articlenumber = f.articlenumber
+GROUP BY a.articlenumber
+ORDER BY a.publishtime DESC
+";
 
+$result = $conn->query($sql);
 $articles = [];
-if($result) {
-    while($row = $result->fetch_assoc()) {
-        $articles[] = $row;
-    }
+
+while ($row = $result->fetch_assoc()) {
+    $articles[] = $row;
 }
 
 echo json_encode($articles);
-
 $conn->close();
