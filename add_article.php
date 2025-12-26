@@ -1,17 +1,42 @@
 <?php
 require 'db_connection.php';
 
-$username = $_POST['username'];
-$articletext = $_POST['articletext'];
+// Get POST data safely
+$username = $_POST['username'] ?? '';
+$title = $_POST['title'] ?? '';
+$articletext = $_POST['articletext'] ?? '';
 
-$stmt = $conn->prepare("INSERT INTO articles (username, articletext, publishtime) VALUES (?, ?, NOW())");
-$stmt->bind_param("ss", $username, $articletext);
+// Validate input
+if (empty($username) || empty($title) || empty($articletext)) {
+    echo json_encode(['status' => 'error', 'message' => 'Missing fields']);
+    exit;
+}
+
+// Get current time in GMT for DB
+$now = new DateTime("now", new DateTimeZone("GMT"));
+$publishtime_db = $now->format('Y-m-d H:i:s');  // MySQL DATETIME format
+$publishtime_display = $now->format('d/m/Y - H:i:s') . ' GMT'; // For JS display
+
+// Prepare and execute
+$sql = "INSERT INTO articles (username, title, articletext, publishtime) VALUES (?, ?, ?, ?)";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    echo json_encode(['status' => 'error', 'message' => $conn->error]);
+    exit;
+}
+$stmt->bind_param("ssss", $username, $title, $articletext, $publishtime_db);
 
 if ($stmt->execute()) {
-    $newID = $stmt->insert_id;
-    echo json_encode(['status' => 'success', 'id' => $newID]);
+    $id = $stmt->insert_id; // get new article ID
+    echo json_encode([
+        'status' => 'success',
+        'id' => $id,
+        'publishtime' => $publishtime_display
+    ]);
 } else {
-    echo json_encode(['status' => 'error']);
+    echo json_encode(['status' => 'error', 'message' => $stmt->error]);
 }
+
 $stmt->close();
 $conn->close();
+?>

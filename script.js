@@ -71,17 +71,22 @@ $(document).ready(function () {
            
         $.post('add_article.php', {
             username: currentUser,
-            articletext: title + ": " + text
+            title: title,
+            articletext: text
         }, function (response) {
-            // Expect PHP to return {status:'success', id: newID} for proper articlenumber
-            try {
-                const res = JSON.parse(response);
-                if (res.status === 'success') {
-                    const newArticleId = res.id; // important for flagging
 
-                    $('#article-title').val('');
-                    $('#article-text').val('');
-                    $('#post-btn').prop('disabled', true);
+          const res = JSON.parse(response);
+    if(res.status === 'success') {
+        const newArticleId = res.id;
+
+            // Expect PHP to return {status:'success', id: newID} for proper articlenumber
+            // try {
+            //     const res = JSON.parse(response);
+            //     if (res.status === 'success') {
+            //         const newArticleId = res.id; 
+            //         $('#article-title').val('');
+            //         $('#article-text').val('');
+            //         $('#post-btn').prop('disabled', true);
 
                     const newArticle = $(`
                         <div class="first-article" data-articlenumber="${newArticleId}" data-author="${currentUser}">
@@ -116,9 +121,9 @@ $(document).ready(function () {
  } else {
                alert('Error posting article');
            }
-       }catch(e){
-           alert('Error posting article');
-       }
+    //    }catch(e){
+    //        alert('Error posting article');
+    //    }
      });
      });
 
@@ -175,33 +180,40 @@ $(document).ready(function () {
     // Submit flag
  
  $(document).on('click', '.report-btn', function () {
-        const articleDiv = $(this).closest('.first-article');
-        const anyChecked = articleDiv.find('input[type="checkbox"]:checked').length > 0;
+        
+    
+const articleDiv = $(this).closest('.first-article');
 
-        if (!anyChecked) {
-            alert("Please select at least one reason.");
-            return;
-        }
+        // const anyChecked = articleDiv.find('input[type="checkbox"]:checked').length > 0;
 
-        const flags = {
-            abusive: articleDiv.find('input[value="abusive"]').prop('checked') ? 1 : 0,
-            spam: articleDiv.find('input[value="spam"]').prop('checked') ? 1 : 0,
-            copyright: articleDiv.find('input[value="copyright"]').prop('checked') ? 1 : 0
-        };
+        // if (!anyChecked) {
+        //     alert("Please select at least one reason.");
+        //     return;
+        // }
+
+        // const flags = {
+        //     abusive: articleDiv.find('input[value="abusive"]').prop('checked') ? 1 : 0,
+        //     spam: articleDiv.find('input[value="spam"]').prop('checked') ? 1 : 0,
+        //     copyright: articleDiv.find('input[value="copyright"]').prop('checked') ? 1 : 0
+        // };
 
 
+
+//    $(document).on('click', '.report-btn', function () {
+
+    
 
     $.post('flag_article.php', {
         username: currentUser,
         articlenumber: articleDiv.data('articlenumber'),
-        flagabusive: abusive ? 1 : 0,
-        flagspam: spam ? 1 : 0,
-        flagcopyright: copyright ? 1 : 0
+        flagabusive: articleDiv.find('input[value="abusive"]').is(':checked') ? 1 : 0,
+        flagspam: articleDiv.find('input[value="spam"]').is(':checked') ? 1 : 0,
+        flagcopyright: articleDiv.find('input[value="copyright"]').is(':checked') ? 1 : 0
     }, function (response) {
-        alert("Flag submitted successfully.");
-        articleDiv.find('.flag-options').fadeOut();
+        alert('Flag submitted');
     });
 });
+
 
 
 
