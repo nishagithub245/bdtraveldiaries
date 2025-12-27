@@ -1,0 +1,28 @@
+<?php
+require 'db_connection.php';
+
+header('Content-Type: application/json');
+
+$username = $_POST['username'] ?? '';
+$title = $_POST['title'] ?? '';
+$articletext = $_POST['articletext'] ?? '';
+
+if($username=='' || $articletext==''){
+    echo json_encode(['status'=>'error','message'=>'Missing fields']);
+    exit;
+}
+
+$time = date('Y-m-d H:i:s');
+
+$stmt = $conn->prepare("INSERT INTO articles (username, title, articletext, publishtime) VALUES (?, ?, ?, ?)");
+$stmt->bind_param("ssss", $username, $title, $articletext, $time);
+
+if($stmt->execute()){
+    echo json_encode(['status'=>'success','id'=>$stmt->insert_id]);
+} else {
+    echo json_encode(['status'=>'error','message'=>$stmt->error]);
+}
+
+$stmt->close();
+$conn->close();
+?>

@@ -1,39 +1,42 @@
 <?php
 require 'db_connection.php';
 
-header('Content-Type: application/json');
+// Get POST data safely
+$username = $_POST['username'] ?? '';
+$title = $_POST['title'] ?? '';
+$articletext = $_POST['articletext'] ?? '';
 
-// Fetch articles with title and flag count
-$sql = "
-SELECT 
-    a.articlenumber,
-    a.username,
-    a.title,
-    a.articletext,
-    a.publishtime,
-    COUNT(f.flagnumber) AS flag_count
-FROM articles a
-LEFT JOIN flags f ON a.articlenumber = f.articlenumber
-GROUP BY a.articlenumber
-ORDER BY a.articlenumber DESC
-";
-
-$result = $conn->query($sql);
-$articles = [];
-
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $articles[] = [
-            'articlenumber' => $row['articlenumber'],
-            'username' => $row['username'],
-            'title' => $row['title'],
-            'articletext' => $row['articletext'],
-            'publishtime' => $row['publishtime'],
-            'flag_count' => $row['flag_count']
-        ];
-    }
+// Validate input
+if (empty($username) || empty($title) || empty($articletext)) {
+    echo json_encode(['status' => 'error', 'message' => 'Missing fields']);
+    exit;
 }
 
-echo json_encode($articles);
+// Get current time in GMT for DB
+$now = new DateTime("now", new DateTimeZone("GMT"));
+$publishtime_db = $now->format('Y-m-d H:i:s');  // MySQL DATETIME format
+$publishtime_display = $now->format('d/m/Y - H:i:s') . ' GMT'; // For JS display
+
+// Prepare and execute
+$sql = "INSERT INTO articles (username, title, articletext, publishtime) VALUES (?, ?, ?, ?)";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    echo json_encode(['status' => 'error', 'message' => $conn->error]);
+    exit;
+}
+$stmt->bind_param("ssss", $username, $title, $articletext, $publishtime_db);
+
+if ($stmt->execute()) {
+    $id = $stmt->insert_id; // get new article ID
+    echo json_encode([
+        'status' => 'success',
+        'id' => $id,
+        'publishtime' => $publishtime_display
+    ]);
+} else {
+    echo json_encode(['status' => 'error', 'message' => $stmt->error]);
+}
+
+$stmt->close();
 $conn->close();
 ?>

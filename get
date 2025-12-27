@@ -1,0 +1,21 @@
+<?php
+require 'db_connection.php';
+header('Content-Type: application/json');
+
+$sql = "SELECT a.articlenumber, a.username, a.articletext, a.publishtime, 
+        IFNULL(SUM(f.flagabusive + f.flagspam + f.flagcopyright),0) AS flag_count
+        FROM articles a
+        LEFT JOIN flags f ON a.articlenumber = f.articlenumber
+        GROUP BY a.articlenumber
+        ORDER BY a.publishtime DESC";
+
+$result = $conn->query($sql);
+$articles = [];
+
+while($row = $result->fetch_assoc()){
+    $articles[] = $row;
+}
+
+echo json_encode($articles);
+$conn->close();
+?>
