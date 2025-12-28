@@ -26,3 +26,9 @@ if($stmt->execute()){
 $stmt->close();
 $conn->close();
 ?>
+
+
+
+
+localStorage.removeItem("username");
+location.reload();

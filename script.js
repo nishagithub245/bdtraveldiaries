@@ -1,56 +1,48 @@
 $(document).ready(function () {
-
-    // Get current user from localStorage
     let currentUser = localStorage.getItem('username') || '';
 
-    // Functions to show/hide sections
     function showUsernameSection() {
-        $('#username-section').removeClass('hidden').css('pointer-events', 'auto');
-        $('#articles-section').addClass('hidden').css('pointer-events', 'none');
+        $('#username-section').show();
+        $('#articles-section').hide();
     }
 
     function showArticlesSection() {
-        $('#username-section').addClass('hidden').css('pointer-events', 'none');
-        $('#articles-section').removeClass('hidden').css('pointer-events', 'auto');
+        $('#username-section').hide();
+        $('#articles-section').show();
     }
 
-    // Always show username section first on page load
-    showUsernameSection();
+    // Page load: check if user signed in
+    if (currentUser) {
+        $('#signed-user').text(currentUser);
+        showArticlesSection();
+        loadArticles();
+    } else {
+        showUsernameSection();
+    }
 
-    // Sign in
+    // Sign in button
     $('#signin-btn').on('click', function () {
         const username = $('#username').val().trim();
-        if (!username) {
-            alert('Please enter a username');
-            return;
-        }
+        if (!username) return alert("Enter username");
         currentUser = username;
         localStorage.setItem('username', username);
         $('#signed-user').text(username);
         showArticlesSection();
         loadArticles();
-        $('#post-btn').prop('disabled', true); // Initially disabled until inputs are filled
     });
 
-    // Enable/disable Post button based on inputs
-    function checkPostButton() {
+    // Enable/disable Post button
+    $('#article-title, #article-text').on('input', function () {
         const title = $('#article-title').val().trim();
         const text = $('#article-text').val().trim();
         $('#post-btn').prop('disabled', !(title && text));
-    }
+    });
 
-    $('#article-title, #article-text').on('input', checkPostButton);
-
-    // Post new article
+    // Post new article live
     $('#post-btn').on('click', function () {
         const title = $('#article-title').val().trim();
         const text = $('#article-text').val().trim();
-
-        if (!title || !text) return;
-        if (!currentUser) {
-            alert('Please sign in first');
-            return;
-        }
+        if (!title || !text || !currentUser) return;
 
         $.post('add_article.php', {
             username: currentUser,
@@ -60,16 +52,11 @@ $(document).ready(function () {
             try {
                 const res = JSON.parse(response);
                 if (res.status === 'success') {
-                    const newArticleId = res.id;
-                    $('#article-title').val('');
-                    $('#article-text').val('');
-                    $('#post-btn').prop('disabled', true);
-
-                    const newArticle = $(`
-                        <div class="first-article" data-articlenumber="${newArticleId}" data-author="${currentUser}">
+                    const newArticle = `
+                        <div class="first-article" data-articlenumber="${res.id}">
                             <div class="first-article-content">
                                 <h3>${title}</h3>
-                                <p class="meta">${currentUser} | ${new Date().toLocaleString('en-GB')} GMT</p>
+                                <p class="meta">${currentUser} | ${res.publishtime}</p>
                                 <p class="text">${text}</p>
                             </div>
                             <div class="article-flagging">
@@ -86,71 +73,34 @@ $(document).ready(function () {
                                 </div>
                             </div>
                         </div>
-                    `);
-
-                    // Hide flag button for own article
-                    newArticle.find(".flag-btn").remove();
-                    $('#dynamic-articles').prepend(newArticle.hide().fadeIn(300));
-                } else {
-                    alert('Error posting article: ' + res.message);
-                }
-            } catch (e) {
-                console.error("Invalid response from add_article.php:", response);
-                alert('Error posting article. Check console.');
-            }
-        });
-    });
-
-    // Toggle flag options
-    $(document).on('click', '.flag-btn', function () {
-        $(this).siblings('.flag-options').fadeToggle(200);
-    });
-
-    // Close flag box
-    $(document).on('click', '.close-flag', function () {
-        $(this).closest('.flag-options').fadeOut(200);
-    });
-
-    // Submit flag
-    $(document).on('click', '.report-btn', function () {
-        const articleDiv = $(this).closest('.first-article');
-        $.post('flag_article.php', {
-            username: currentUser,
-            articlenumber: articleDiv.data('articlenumber'),
-            flagabusive: articleDiv.find('input[value="abusive"]').is(':checked') ? 1 : 0,
-            flagspam: articleDiv.find('input[value="spam"]').is(':checked') ? 1 : 0,
-            flagcopyright: articleDiv.find('input[value="copyright"]').is(':checked') ? 1 : 0
-        }, function (response) {
-            try {
-                const res = JSON.parse(response);
-                if (res.status === 'success') {
-                    alert('Flag submitted');
-                    articleDiv.find('.report-btn').prop('disabled', true).text('Flagged');
+                    `;
+                    $('#dynamic-articles').prepend(newArticle);
+                    $('#article-title, #article-text').val('');
+                    $('#post-btn').prop('disabled', true);
                 } else {
                     alert('Error: ' + res.message);
                 }
             } catch (e) {
-                console.error("Invalid response from flag_article.php:", response);
-                alert('Error submitting flag. Check console.');
+                console.error('Invalid response from add_article.php:', response);
+                alert('Error posting article.');
             }
         });
     });
 
-    // Load articles from DB
+    // Load all articles from DB
     function loadArticles() {
-        $.getJSON('get_articles.php', function (data) {
-            $('#dynamic-articles').empty();
-            data.forEach(article => {
-                const newArticle = $(`
-                    <div class="first-article" data-articlenumber="${article.articlenumber}" data-author="${article.username}">
+        $.getJSON('get_article.php', function (articles) {
+            $('#dynamic-articles').empty(); // clear old ones
+            articles.forEach(article => {
+                const articleHTML = `
+                    <div class="first-article" data-articlenumber="${article.articlenumber}">
                         <div class="first-article-content">
                             <h3>${article.title}</h3>
                             <p class="meta">${article.username} | ${article.publishtime}</p>
                             <p class="text">${article.articletext}</p>
-                            <p class="flag-count">Flags: ${article.flag_count}</p>
                         </div>
                         <div class="article-flagging">
-                            <button class="flag-btn">Flag</button>
+                            ${article.username !== currentUser ? `<button class="flag-btn">Flag</button>` : ''}
                             <div class="flag-options">
                                 <div class="flag-options-content">
                                     <label><input type="checkbox" value="abusive"> Abusive</label>
@@ -164,16 +114,42 @@ $(document).ready(function () {
                             </div>
                         </div>
                     </div>
-                `);
-
-                // Hide flag button if the article belongs to current user
-                if (article.username === currentUser) {
-                    newArticle.find(".flag-btn").remove();
-                }
-
-                $('#dynamic-articles').append(newArticle);
+                `;
+                $('#dynamic-articles').append(articleHTML);
             });
+        }).fail(function(err) {
+            console.error("Failed to fetch articles:", err);
         });
     }
 
+    // Flag button actions
+    $(document).on('click', '.flag-btn', function () {
+        $(this).siblings('.flag-options').fadeToggle(200);
+    });
+    $(document).on('click', '.close-flag', function () {
+        $(this).closest('.flag-options').fadeOut(200);
+    });
+    $(document).on('click', '.report-btn', function () {
+        const articleDiv = $(this).closest('.first-article');
+        $.post('flag_article.php', {
+            username: currentUser,
+            articlenumber: articleDiv.data('articlenumber'),
+            flagabusive: articleDiv.find('input[value="abusive"]').is(':checked') ? 1 : 0,
+            flagspam: articleDiv.find('input[value="spam"]').is(':checked') ? 1 : 0,
+            flagcopyright: articleDiv.find('input[value="copyright"]').is(':checked') ? 1 : 0
+        }, function(response) {
+            try {
+                const res = JSON.parse(response);
+                if(res.status === 'success') {
+                    alert('Flag submitted');
+                    articleDiv.find('.report-btn').prop('disabled', true).text('Flagged');
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            } catch(e) {
+                console.error("Invalid response from flag_article.php:", response);
+                alert('Error submitting flag.');
+            }
+        });
+    });
 });
