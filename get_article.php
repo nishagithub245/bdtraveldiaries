@@ -1,35 +1,26 @@
 <?php
 require 'db_connection.php';
-header('Content-Type: application/json');
+
+$currentUser = $_GET['username'] ?? '';
 
 $sql = "
-SELECT 
-    a.articlenumber,
-    a.username,
-    a.title,
-    a.articletext,
-    a.publishtime,
-    COUNT(f.flagnumber) AS flag_count
+SELECT a.articlenumber, a.username, a.title, a.articletext, a.publishtime,
+       COALESCE(f.flagabusive,0) AS user_flagabusive,
+       COALESCE(f.flagspam,0) AS user_flagspam,
+       COALESCE(f.flagcopyright,0) AS user_flagcopyright
 FROM articles a
-LEFT JOIN flags f ON a.articlenumber = f.articlenumber
-GROUP BY a.articlenumber
-ORDER BY a.articlenumber DESC
+LEFT JOIN flags f 
+  ON a.articlenumber = f.articlenumber 
+  AND f.username = '$currentUser' 
+  AND f.recorded = 1
+ORDER BY a.publishtime DESC
 ";
 
 $result = $conn->query($sql);
 $articles = [];
 
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $articles[] = [
-            'articlenumber' => $row['articlenumber'],
-            'username' => $row['username'],
-            'title' => $row['title'],
-            'articletext' => $row['articletext'],
-            'publishtime' => $row['publishtime'],
-            'flag_count' => $row['flag_count']
-        ];
-    }
+while($row = $result->fetch_assoc()){
+    $articles[] = $row;
 }
 
 echo json_encode($articles);

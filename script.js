@@ -20,6 +20,10 @@ $(document).ready(function () {
         showUsernameSection();
     }
 
+
+       // Always show username section first on page load
+    showUsernameSection();
+
     // Sign in button
     $('#signin-btn').on('click', function () {
         const username = $('#username').val().trim();
@@ -39,53 +43,66 @@ $(document).ready(function () {
     });
 
     // Post new article live
-    $('#post-btn').on('click', function () {
+
+     $('#post-btn').on('click', function(){
         const title = $('#article-title').val().trim();
         const text = $('#article-text').val().trim();
-        if (!title || !text || !currentUser) return;
+        if(!title || !text || !currentUser) return;
 
-        $.post('add_article.php', {
-            username: currentUser,
-            title: title,
-            articletext: text
-        }, function (response) {
-            try {
-                const res = JSON.parse(response);
-                if (res.status === 'success') {
-                    const newArticle = `
-                        <div class="first-article" data-articlenumber="${res.id}">
-                            <div class="first-article-content">
-                                <h3>${title}</h3>
-                                <p class="meta">${currentUser} | ${res.publishtime}</p>
-                                <p class="text">${text}</p>
-                            </div>
-                            <div class="article-flagging">
-                                <div class="flag-options">
-                                    <div class="flag-options-content">
-                                        <label><input type="checkbox" value="abusive"> Abusive</label>
-                                        <label><input type="checkbox" value="spam"> Spam</label>
-                                        <label><input type="checkbox" value="copyright"> Copyrighted</label>
-                                    </div>
-                                    <div class="flag-options-symbols">
-                                        <button class="close-flag">X</button>
-                                        <button class="report-btn">Report</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    $('#dynamic-articles').prepend(newArticle);
-                    $('#article-title, #article-text').val('');
-                    $('#post-btn').prop('disabled', true);
-                } else {
-                    alert('Error: ' + res.message);
-                }
-            } catch (e) {
-                console.error('Invalid response from add_article.php:', response);
-                alert('Error posting article.');
-            }
+        $.post('add_article.php', {username: currentUser, title, articletext: text}, function(response){
+            const res = JSON.parse(response);
+            if(res.status === 'success') loadArticles();
+            else alert('Error: '+res.message);
         });
     });
+
+    // $('#post-btn').on('click', function () {
+    //     const title = $('#article-title').val().trim();
+    //     const text = $('#article-text').val().trim();
+    //     if (!title || !text || !currentUser) return;
+
+    //     $.post('add_article.php', {
+    //         username: currentUser,
+    //         title: title,
+    //         articletext: text
+    //     }, function (response) {
+    //         try {
+    //             const res = JSON.parse(response);
+    //             if (res.status === 'success') {
+    //                 const newArticle = `
+    //                     <div class="first-article" data-articlenumber="${res.id}">
+    //                         <div class="first-article-content">
+    //                             <h3>${title}</h3>
+    //                             <p class="meta">${currentUser} | ${res.publishtime}</p>
+    //                             <p class="text">${text}</p>
+    //                         </div>
+    //                         <div class="article-flagging">
+    //                             <div class="flag-options">
+    //                                 <div class="flag-options-content">
+    //                                     <label><input type="checkbox" value="abusive"> Abusive</label>
+    //                                     <label><input type="checkbox" value="spam"> Spam</label>
+    //                                     <label><input type="checkbox" value="copyright"> Copyrighted</label>
+    //                                 </div>
+    //                                 <div class="flag-options-symbols">
+    //                                     <button class="close-flag">X</button>
+    //                                     <button class="report-btn">Report</button>
+    //                                 </div>
+    //                             </div>
+    //                         </div>
+    //                     </div>
+    //                 `;
+    //                 $('#dynamic-articles').prepend(newArticle);
+    //                 $('#article-title, #article-text').val('');
+    //                 $('#post-btn').prop('disabled', true);
+    //             } else {
+    //                 alert('Error: ' + res.message);
+    //             }
+    //         } catch (e) {
+    //             console.error('Invalid response from add_article.php:', response);
+    //             alert('Error posting article.');
+    //         }
+    //     });
+    // });
 
     // Load all articles from DB
     function loadArticles() {
@@ -129,11 +146,19 @@ $(document).ready(function () {
     $(document).on('click', '.close-flag', function () {
         $(this).closest('.flag-options').fadeOut(200);
     });
+
+
+
+    
     $(document).on('click', '.report-btn', function () {
         const articleDiv = $(this).closest('.first-article');
+        const reportBtn = $(this); // save reference to this button
+
+
         $.post('flag_article.php', {
             username: currentUser,
-            articlenumber: articleDiv.data('articlenumber'),
+          articlenumber: parseInt(articleDiv.data('articlenumber')),
+
             flagabusive: articleDiv.find('input[value="abusive"]').is(':checked') ? 1 : 0,
             flagspam: articleDiv.find('input[value="spam"]').is(':checked') ? 1 : 0,
             flagcopyright: articleDiv.find('input[value="copyright"]').is(':checked') ? 1 : 0
@@ -142,7 +167,12 @@ $(document).ready(function () {
                 const res = JSON.parse(response);
                 if(res.status === 'success') {
                     alert('Flag submitted');
-                    articleDiv.find('.report-btn').prop('disabled', true).text('Flagged');
+                  
+                // Update button text immediately
+                reportBtn.text('Update Flag');
+
+                // Keep the button enabled for future updates
+                reportBtn.prop('disabled', false); 
                 } else {
                     alert('Error: ' + res.message);
                 }

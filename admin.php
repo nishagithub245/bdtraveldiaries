@@ -81,27 +81,35 @@ body {
 <script>
 let lastFlagId = 0;
 
-function loadNotifications() {
-    $.post('notifications.php', { lastFlagId: lastFlagId }, function(data) {
+function listenForFlags() {
+    $.ajax({
+        url: 'notifications.php',
+        type: 'POST',
+        data: { lastFlagId: lastFlagId },
+        dataType: 'json',
+        success: function (data) {
 
-        data.forEach(item => {
+            if (data && data.flagnumber) {
+                $('#notifications').append(`
+                    <div class="notification">
+                        <span class="notification-time">${data.time} GMT</span>
+                        ${data.message}
+                    </div>
+                `);
 
-            $('#notifications').append(`
-                <div class="notification">
-                    <span class="notification-time">${item.time} GMT</span>
-                    ${item.message}
-                </div>
-            `);
+                lastFlagId = data.flagnumber;
+            }
 
-            lastFlagId = item.flagnumber;
-        });
-
-    }, 'json');
+            // Immediately wait for the next update
+            listenForFlags();
+        },
+        error: function () {
+            // Retry safely if connection fails
+            setTimeout(listenForFlags, 3000);
+        }
+    });
 }
 
-loadNotifications();
-setInterval(loadNotifications, 5000);
+// Start listening once page loads
+listenForFlags();
 </script>
-
-</body>
-</html>
