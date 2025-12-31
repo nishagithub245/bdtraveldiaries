@@ -8,28 +8,24 @@ $flagspam = $_POST['flagspam'] ?? 0;
 $flagcopyright = $_POST['flagcopyright'] ?? 0;
 $time = date('Y-m-d H:i:s');
 
-
 if(!$username || !$articlenumber){
     echo json_encode(["status"=>"error","message"=>"Missing data"]);
     exit;
 }
 
-
-// Mark previous report as inactive
+// Make previous flags inactive for this user only
 $conn->query("UPDATE flags SET recorded=0 
              WHERE username='$username' AND articlenumber=$articlenumber AND recorded=1");
 
-
-
-
-// Insert new report
-$insertSql = "INSERT INTO flags (username, articlenumber, flagabusive, flagspam, flagcopyright, time, recorded) VALUES (?, ?, ?, ?, ?, ?, 1)";
+// Insert new report as a new row
+$insertSql = "INSERT INTO flags (username, articlenumber, flagabusive, flagspam, flagcopyright, time, recorded) 
+              VALUES (?, ?, ?, ?, ?, ?, 1)";
 $stmt = $conn->prepare($insertSql);
 $stmt->bind_param("siiiss", $username, $articlenumber, $flagabusive, $flagspam, $flagcopyright, $time);
 
 if($stmt->execute()){
     echo json_encode(["status"=>"success"]);
-}else{
+} else {
     echo json_encode(["status"=>"error","message"=>$stmt->error]);
 }
 

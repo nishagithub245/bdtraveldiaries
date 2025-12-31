@@ -11,16 +11,34 @@ SELECT a.articlenumber, a.username, a.title, a.articletext, a.publishtime,
 FROM articles a
 LEFT JOIN flags f 
   ON a.articlenumber = f.articlenumber 
-  AND f.username = '$currentUser' 
+  AND f.username = ?
   AND f.recorded = 1
 ORDER BY a.publishtime DESC
 ";
 
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $currentUser);
+$stmt->execute();
+$result = $stmt->get_result();
+
 $articles = [];
 
 while($row = $result->fetch_assoc()){
-    $articles[] = $row;
+    $userFlags = [
+        'abusive' => (int)$row['user_flagabusive'],
+        'spam' => (int)$row['user_flagspam'],
+        'copyright' => (int)$row['user_flagcopyright'],
+        'any' => ($row['user_flagabusive'] || $row['user_flagspam'] || $row['user_flagcopyright']) ? 1 : 0
+    ];
+
+    $articles[] = [
+        'articlenumber' => $row['articlenumber'],
+        'username' => $row['username'],
+        'title' => $row['title'],
+        'articletext' => $row['articletext'],
+        'publishtime' => $row['publishtime'],
+        'userFlags' => $userFlags
+    ];
 }
 
 echo json_encode($articles);
