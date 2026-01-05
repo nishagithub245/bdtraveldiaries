@@ -67,7 +67,7 @@ body {
 <div class="admin-container">
 
     <div class="admin-header">
-        <div class="admin-header-left"><u>Flag Reports</u></div>
+        <div class="admin-header-left"><u>Flag Reports</ul></div>
         <div class="admin-header-right">Admin Page – Bangladesh Travel Diaries Website</div>
     </div>
 
@@ -81,13 +81,16 @@ body {
 <script>
 let lastFlagId = 0;
 
-function fetchNotifications() {
-    $.post('notifications.php', { lastFlagId }, function(response) {
-        try {
-            const data = JSON.parse(response);
+function listenForFlags() {
+    $.ajax({
+        url: 'notifications.php',
+        type: 'POST',
+        data: { lastFlagId: lastFlagId },
+        dataType: 'json',
+        success: function (data) {
+
             if (data && data.flagnumber) {
-                // Prepend so newest notifications appear on top
-                $('#notifications').prepend(`
+                $('#notifications').append(`
                     <div class="notification">
                         <span class="notification-time">${data.time} GMT</span>
                         ${data.message}
@@ -96,19 +99,17 @@ function fetchNotifications() {
 
                 lastFlagId = data.flagnumber;
             }
-        } catch(e) {
-            console.error('Invalid notifications response:', response);
+
+            // Immediately wait for the next update
+            listenForFlags();
+        },
+        error: function () {
+            // Retry safely if connection fails
+            setTimeout(listenForFlags, 3000);
         }
-    }).always(function() {
-        // Poll again after short delay
-        setTimeout(fetchNotifications, 1000);
     });
 }
 
-$(document).ready(function(){
-    fetchNotifications(); // start polling on page load
-});
+// Start listening once page loads
+listenForFlags();
 </script>
-
-</body>
-</html>
