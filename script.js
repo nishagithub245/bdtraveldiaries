@@ -20,12 +20,6 @@ $(document).ready(function () {
         showUsernameSection();
     }
 
-
-    // Always show username section first on page load
-    showUsernameSection(); 
-
-
-
     // Sign in button
     $('#signin-btn').on('click', function () {
         const username = $('#username').val().trim();
@@ -44,72 +38,31 @@ $(document).ready(function () {
         $('#post-btn').prop('disabled', !(title && text));
     });
 
-    // Post new article live
-
-     $('#post-btn').on('click', function(){
+    // Post new article
+    $('#post-btn').on('click', function () {
         const title = $('#article-title').val().trim();
         const text = $('#article-text').val().trim();
-        if(!title || !text || !currentUser) return;
+        if (!title || !text || !currentUser) return;
 
-        $.post('add_article.php', {username: currentUser, title, articletext: text}, function(response){
-            const res = JSON.parse(response);
-            if(res.status === 'success') loadArticles();
-            else alert('Error: '+res.message);
+        $.ajax({
+            url: 'add_article.php',
+            type: 'POST',
+            dataType: 'json', // auto parse JSON
+            data: { username: currentUser, title, articletext: text },
+            success: function (res) {
+                if (res.status === 'success') loadArticles();
+                else alert('Error: ' + res.message);
+            },
+            error: function (xhr) {
+                console.error(xhr.responseText);
+                alert('Server error occurred while posting article');
+            }
         });
     });
 
-    // $('#post-btn').on('click', function () {
-    //     const title = $('#article-title').val().trim();
-    //     const text = $('#article-text').val().trim();
-    //     if (!title || !text || !currentUser) return;
-
-    //     $.post('add_article.php', {
-    //         username: currentUser,
-    //         title: title,
-    //         articletext: text
-    //     }, function (response) {
-    //         try {
-    //             const res = JSON.parse(response);
-    //             if (res.status === 'success') {
-    //                 const newArticle = `
-    //                     <div class="first-article" data-articlenumber="${res.id}">
-    //                         <div class="first-article-content">
-    //                             <h3>${title}</h3>
-    //                             <p class="meta">${currentUser} | ${res.publishtime}</p>
-    //                             <p class="text">${text}</p>
-    //                         </div>
-    //                         <div class="article-flagging">
-    //                             <div class="flag-options">
-    //                                 <div class="flag-options-content">
-    //                                     <label><input type="checkbox" value="abusive"> Abusive</label>
-    //                                     <label><input type="checkbox" value="spam"> Spam</label>
-    //                                     <label><input type="checkbox" value="copyright"> Copyrighted</label>
-    //                                 </div>
-    //                                 <div class="flag-options-symbols">
-    //                                     <button class="close-flag">X</button>
-    //                                     <button class="report-btn">Report</button>
-    //                                 </div>
-    //                             </div>
-    //                         </div>
-    //                     </div>
-    //                 `;
-    //                 $('#dynamic-articles').prepend(newArticle);
-    //                 $('#article-title, #article-text').val('');
-    //                 $('#post-btn').prop('disabled', true);
-    //             } else {
-    //                 alert('Error: ' + res.message);
-    //             }
-    //         } catch (e) {
-    //             console.error('Invalid response from add_article.php:', response);
-    //             alert('Error posting article.');
-    //         }
-    //     });
-    // });
-
     // Load all articles from DB
-    
     function loadArticles() {
-        $.getJSON('get_article.php', {username: currentUser}, function (articles) {
+        $.getJSON('get_article.php', { username: currentUser }, function (articles) {
             $('#dynamic-articles').empty();
             articles.forEach(article => {
                 const flags = article.userFlags || {};
@@ -140,38 +93,60 @@ $(document).ready(function () {
         });
     }
 
-
-
-
-    // Flag button actions
+    // Flag button toggle
     $(document).on('click', '.flag-btn', function () {
         $(this).siblings('.flag-options').fadeToggle(200);
     });
+
     $(document).on('click', '.close-flag', function () {
         $(this).closest('.flag-options').fadeOut(200);
     });
 
-
-
-    
+    // REPORT / UPDATE FLAG button
     $(document).on('click', '.report-btn', function () {
         const articleDiv = $(this).closest('.first-article');
         const reportBtn = $(this);
 
-        $.post('flag_article.php', {
-            username: currentUser,
-            articlenumber: parseInt(articleDiv.data('articlenumber')),
-            flagabusive: articleDiv.find('input[value="abusive"]').is(':checked') ? 1 : 0,
-            flagspam: articleDiv.find('input[value="spam"]').is(':checked') ? 1 : 0,
-            flagcopyright: articleDiv.find('input[value="copyright"]').is(':checked') ? 1 : 0
-        }, function(response){
-            const res = JSON.parse(response);
-            if(res.status === 'success'){
-                alert('Flag submitted');
-                reportBtn.text('Update Flag');
+        // Get current checkbox state
+        const flagAbusive = articleDiv.find('input[value="abusive"]').is(':checked') ? 1 : 0;
+        const flagSpam = articleDiv.find('input[value="spam"]').is(':checked') ? 1 : 0;
+        const flagCopyright = articleDiv.find('input[value="copyright"]').is(':checked') ? 1 : 0;
+
+        // Temporarily disable button while sending
+        reportBtn.prop('disabled', true);
+
+        $.ajax({
+            url: 'flag_article.php',
+            type: 'POST',
+            dataType: 'json', // 👈 ensures JSON parsing
+            data: {
+                username: currentUser,
+                articlenumber: parseInt(articleDiv.data('articlenumber')),
+                flagabusive: flagAbusive,
+                flagspam: flagSpam,
+                flagcopyright: flagCopyright
+            },
+            success: function (res) {
+                if (res.status === 'success') {
+                    alert(res.message || 'Flags updated successfully');
+
+                    // Update button text dynamically
+                    if (flagAbusive || flagSpam || flagCopyright) {
+                        reportBtn.text('Update Flag');
+                    } else {
+                        reportBtn.text('Report'); // all unchecked
+                    }
+                } else {
+                    alert(res.message || 'Error occurred while updating flags');
+                }
+            },
+            error: function (xhr) {
+                console.error(xhr.responseText);
+                alert('Server error occurred while updating flags');
+            },
+            complete: function () {
+                // Re-enable button so user can click anytime
                 reportBtn.prop('disabled', false);
-            } else {
-                alert('Error: ' + res.message);
             }
         });
     });

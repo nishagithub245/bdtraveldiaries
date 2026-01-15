@@ -1,80 +1,102 @@
 <?php
 require 'db_connection.php';
 
-$lastFlagId = isset($_POST['lastFlagId']) ? intval($_POST['lastFlagId']) : 0;
+$lastFlagId = isset($_POST['lastFlagId']) ? (int)$_POST['lastFlagId'] : 0;
 $startTime = time();
 $timeout = 25;
 
-while(true){
-    // Get next flag record
+while (true) {
+
     $sql = "
-        SELECT f.flagnumber, f.username AS flagger, f.articlenumber, f.flagabusive, f.flagspam, f.flagcopyright, f.time,
-               a.username AS author, a.title
+        SELECT 
+            f.flagnumber,
+            f.username AS flagger,
+            f.articlenumber,
+            f.flagabusive,
+            f.flagspam,
+            f.flagcopyright,
+            f.time,
+            a.username AS author,
+            a.title
         FROM flags f
-        JOIN articles a ON f.articlenumber = a.articlenumber
-        WHERE f.flagnumber > $lastFlagId
+        JOIN articles a ON a.articlenumber = f.articlenumber
+        WHERE f.flagnumber > ?
         ORDER BY f.flagnumber ASC
         LIMIT 1
     ";
-    $result = $conn->query($sql);
 
-    if($result && $result->num_rows > 0){
-        $row = $result->fetch_assoc();
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $lastFlagId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+
         $flagger = $row['flagger'];
         $articlenumber = $row['articlenumber'];
+        $currentId = $row['flagnumber'];
 
-        // Get last recorded flag for same user/article
+        /* Fetch previous active record for comparison */
         $prevSql = "
             SELECT flagabusive, flagspam, flagcopyright
             FROM flags
-            WHERE username = ? AND articlenumber = ? AND flagnumber < ?
+            WHERE username = ? 
+              AND articlenumber = ? 
+              AND flagnumber < ?
             ORDER BY flagnumber DESC
             LIMIT 1
         ";
-        $stmt = $conn->prepare($prevSql);
-        $stmt->bind_param("sii", $flagger, $articlenumber, $row['flagnumber']);
-        $stmt->execute();
-        $prevResult = $stmt->get_result();
-        $prevFlags = $prevResult->fetch_assoc() ?: ['flagabusive'=>0,'flagspam'=>0,'flagcopyright'=>0];
+
+        $prevStmt = $conn->prepare($prevSql);
+        $prevStmt->bind_param("sii", $flagger, $articlenumber, $currentId);
+        $prevStmt->execute();
+        $prevFlags = $prevStmt->get_result()->fetch_assoc()
+            ?: ['flagabusive'=>0,'flagspam'=>0,'flagcopyright'=>0];
+
+        $prevStmt->close();
 
         $currentFlags = [
-            'abusive' => $row['flagabusive'],
-            'spam' => $row['flagspam'],
-            'copyright' => $row['flagcopyright']
+            'abusive'   => (int)$row['flagabusive'],
+            'spam'      => (int)$row['flagspam'],
+            'copyright' => (int)$row['flagcopyright']
         ];
 
-        $reasonsFlagged = [];
-        $reasonsUnflagged = [];
+        $flagged = [];
+        $unflagged = [];
 
-        foreach($currentFlags as $type => $value){
-            if($value && !$prevFlags['flag'.$type]) $reasonsFlagged[] = $type;
-            if(!$value && $prevFlags['flag'.$type]) $reasonsUnflagged[] = $type;
+        foreach ($currentFlags as $type => $value) {
+            if ($value && empty($prevFlags['flag'.$type])) {
+                $flagged[] = ucfirst($type);
+            }
+            if (!$value && !empty($prevFlags['flag'.$type])) {
+                $unflagged[] = ucfirst($type);
+            }
         }
 
-        // If no changes, skip
-        if(empty($reasonsFlagged) && empty($reasonsUnflagged)){
-            sleep(1);
-            if(time() - $startTime >= $timeout){
-                echo json_encode([]);
-                flush();
-                exit;
-            }
+        /* Ignore no-change rows */
+        if (empty($flagged) && empty($unflagged)) {
+            $lastFlagId = $currentId;
             continue;
         }
 
+        /* Build admin notification message */
         $message = "<span class='highlight-user'>{$flagger}</span> ";
 
-        if($reasonsUnflagged){
-            $message .= "has un-flagged the article <strong>{$row['title']}</strong> as ".implode(', ',$reasonsUnflagged);
-            if($reasonsFlagged) $message .= " and flagged it as ".implode(', ',$reasonsFlagged);
+        if (!empty($unflagged)) {
+            $message .= "has un-flagged the article <strong>{$row['title']}</strong> as "
+                     . implode(', ', $unflagged);
+            if (!empty($flagged)) {
+                $message .= " and flagged it as " . implode(', ', $flagged);
+            }
         } else {
-            $message .= "flagged <strong>{$row['title']}</strong> as ".implode(', ',$reasonsFlagged);
+            $message .= "flagged <strong>{$row['title']}</strong> as "
+                     . implode(', ', $flagged);
         }
 
         echo json_encode([
-            'flagnumber' => $row['flagnumber'],
-            'time' => $row['time'],
-            'message' => $message
+            'flagnumber' => $currentId,
+            'time'       => $row['time'],
+            'message'    => $message
         ]);
 
         flush();
@@ -82,7 +104,8 @@ while(true){
     }
 
     sleep(1);
-    if(time() - $startTime >= $timeout){
+
+    if (time() - $startTime >= $timeout) {
         echo json_encode([]);
         flush();
         exit;

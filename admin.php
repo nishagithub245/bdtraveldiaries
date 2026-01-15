@@ -43,6 +43,7 @@ body {
     font-size: 14px;
     line-height: 1.4;
     color: #1f3d1f;
+    transition: background 0.5s ease;
 }
 
 .notification-time {
@@ -59,6 +60,10 @@ body {
     color: #0b4f2f;
     font-weight: bold;
 }
+
+.new-notification {
+    background: #f9f1a5 !important;
+}
 </style>
 </head>
 
@@ -67,12 +72,12 @@ body {
 <div class="admin-container">
 
     <div class="admin-header">
-        <div class="admin-header-left"><u>Flag Reports</ul></div>
+        <div class="admin-header-left"><u>Flag Reports</u></div>
         <div class="admin-header-right">Admin Page – Bangladesh Travel Diaries Website</div>
     </div>
 
     <div id="notifications">
-        <!-- Notifications will be inserted here -->
+        <!-- Notifications will appear here -->
     </div>
 
 </div>
@@ -86,30 +91,43 @@ function listenForFlags() {
         url: 'notifications.php',
         type: 'POST',
         data: { lastFlagId: lastFlagId },
-        dataType: 'json',
+        dataType: 'json', // ensure JSON parse
         success: function (data) {
+            // sometimes PHP warnings may return empty or malformed JSON
+            if (!data) return setTimeout(listenForFlags, 3000);
 
-            if (data && data.flagnumber) {
-                $('#notifications').append(`
-                    <div class="notification">
+            // If a new flag record exists
+            if (data.flagnumber) {
+                const $notif = $(`
+                    <div class="notification new-notification">
                         <span class="notification-time">${data.time} GMT</span>
                         ${data.message}
                     </div>
                 `);
+                $('#notifications').prepend($notif);
+
+                // Remove highlight after 5s
+                setTimeout(() => {
+                    $notif.removeClass('new-notification');
+                }, 5000);
 
                 lastFlagId = data.flagnumber;
             }
 
-            // Immediately wait for the next update
+            // Keep polling immediately
             listenForFlags();
         },
-        error: function () {
-            // Retry safely if connection fails
-            setTimeout(listenForFlags, 3000);
+        error: function (xhr, status, err) {
+            console.error("Admin notifications error:", xhr.responseText || err);
+            setTimeout(listenForFlags, 5000); // retry after 5s
         }
     });
 }
 
-// Start listening once page loads
-listenForFlags();
+// Start polling after page load
+$(document).ready(function() {
+    listenForFlags();
+});
 </script>
+</body>
+</html>

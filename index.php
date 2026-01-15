@@ -15,7 +15,7 @@
   <form action="#" method="post" autocomplete="off" class="username-form" onsubmit="return false;">
     <label for="name">Enter your username:</label>
     <input type="text" id="username" placeholder="Type your username here" autocomplete="off"/>
-    <button type="submit" id="signin-btn">Sign in</button>
+    <button type="button" id="signin-btn">Sign in</button>
   </form>
 </div>
 
