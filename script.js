@@ -47,7 +47,7 @@ $(document).ready(function () {
         $.ajax({
             url: 'add_article.php',
             type: 'POST',
-            dataType: 'json', // auto parse JSON
+            dataType: 'json',
             data: { username: currentUser, title, articletext: text },
             success: function (res) {
                 if (res.status === 'success') loadArticles();
@@ -75,7 +75,7 @@ $(document).ready(function () {
                     </div>
                     <div class="article-flagging">
                         ${article.username !== currentUser ? `<button class="flag-btn">Flag</button>` : ''}
-                        <div class="flag-options">
+                        <div class="flag-options" style="display:none;">
                             <div class="flag-options-content">
                                 <label><input type="checkbox" value="abusive" ${flags.abusive ? 'checked' : ''}> Abusive</label>
                                 <label><input type="checkbox" value="spam" ${flags.spam ? 'checked' : ''}> Spam</label>
@@ -93,11 +93,10 @@ $(document).ready(function () {
         });
     }
 
-    // Flag button toggle
+    // Flag toggle buttons
     $(document).on('click', '.flag-btn', function () {
         $(this).siblings('.flag-options').fadeToggle(200);
     });
-
     $(document).on('click', '.close-flag', function () {
         $(this).closest('.flag-options').fadeOut(200);
     });
@@ -107,18 +106,16 @@ $(document).ready(function () {
         const articleDiv = $(this).closest('.first-article');
         const reportBtn = $(this);
 
-        // Get current checkbox state
         const flagAbusive = articleDiv.find('input[value="abusive"]').is(':checked') ? 1 : 0;
         const flagSpam = articleDiv.find('input[value="spam"]').is(':checked') ? 1 : 0;
         const flagCopyright = articleDiv.find('input[value="copyright"]').is(':checked') ? 1 : 0;
 
-        // Temporarily disable button while sending
         reportBtn.prop('disabled', true);
 
         $.ajax({
             url: 'flag_article.php',
             type: 'POST',
-            dataType: 'json', // 👈 ensures JSON parsing
+            dataType: 'json',
             data: {
                 username: currentUser,
                 articlenumber: parseInt(articleDiv.data('articlenumber')),
@@ -128,16 +125,10 @@ $(document).ready(function () {
             },
             success: function (res) {
                 if (res.status === 'success') {
-                    alert(res.message || 'Flags updated successfully');
-
-                    // Update button text dynamically
-                    if (flagAbusive || flagSpam || flagCopyright) {
-                        reportBtn.text('Update Flag');
-                    } else {
-                        reportBtn.text('Report'); // all unchecked
-                    }
+                    alert(res.message);
+                    reportBtn.text(flagAbusive || flagSpam || flagCopyright ? 'Update Flag' : 'Report');
                 } else {
-                    alert(res.message || 'Error occurred while updating flags');
+                    alert(res.message);
                 }
             },
             error: function (xhr) {
@@ -145,7 +136,6 @@ $(document).ready(function () {
                 alert('Server error occurred while updating flags');
             },
             complete: function () {
-                // Re-enable button so user can click anytime
                 reportBtn.prop('disabled', false);
             }
         });
