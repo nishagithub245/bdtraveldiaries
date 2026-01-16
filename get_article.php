@@ -17,6 +17,10 @@ ORDER BY a.publishtime DESC
 ";
 
 $stmt = $conn->prepare($sql);
+if (!$stmt) {
+    echo json_encode(["error" => "Prepare failed: " . $conn->error]);
+    exit;
+}
 $stmt->bind_param("s", $currentUser);
 $stmt->execute();
 $result = $stmt->get_result();

@@ -6,7 +6,6 @@ $startTime = time();
 $timeout = 25;
 
 while (true) {
-
     $sql = "
         SELECT 
             f.flagnumber,
@@ -16,11 +15,12 @@ while (true) {
             f.flagspam,
             f.flagcopyright,
             f.time,
+            f.recorded,
             a.username AS author,
             a.title
         FROM flags f
         JOIN articles a ON a.articlenumber = f.articlenumber
-        WHERE f.flagnumber > ?
+        WHERE f.flagnumber > ? AND f.recorded = 1
         ORDER BY f.flagnumber ASC
         LIMIT 1
     ";
@@ -31,17 +31,17 @@ while (true) {
     $result = $stmt->get_result();
 
     if ($row = $result->fetch_assoc()) {
-
         $flagger = $row['flagger'];
         $articlenumber = $row['articlenumber'];
         $currentId = $row['flagnumber'];
 
-        /* Fetch previous active record for comparison */
+        /* Fetch previous ACTIVE flag record for comparison */
         $prevSql = "
             SELECT flagabusive, flagspam, flagcopyright
             FROM flags
             WHERE username = ? 
               AND articlenumber = ? 
+              AND recorded = 1
               AND flagnumber < ?
             ORDER BY flagnumber DESC
             LIMIT 1
@@ -50,8 +50,14 @@ while (true) {
         $prevStmt = $conn->prepare($prevSql);
         $prevStmt->bind_param("sii", $flagger, $articlenumber, $currentId);
         $prevStmt->execute();
-        $prevFlags = $prevStmt->get_result()->fetch_assoc()
-            ?: ['flagabusive'=>0,'flagspam'=>0,'flagcopyright'=>0];
+        $prevResult = $prevStmt->get_result();
+        
+        // If no previous active flag, treat as all flags are 0
+        $prevFlags = $prevResult->fetch_assoc() ?: [
+            'flagabusive' => 0,
+            'flagspam' => 0,
+            'flagcopyright' => 0
+        ];
 
         $prevStmt->close();
 
@@ -65,32 +71,42 @@ while (true) {
         $unflagged = [];
 
         foreach ($currentFlags as $type => $value) {
-            if ($value && empty($prevFlags['flag'.$type])) {
+            $prevValue = $prevFlags['flag'.$type] ?? 0;
+            if ($value && !$prevValue) {
                 $flagged[] = ucfirst($type);
             }
-            if (!$value && !empty($prevFlags['flag'.$type])) {
+            if (!$value && $prevValue) {
                 $unflagged[] = ucfirst($type);
             }
-        }
-
-        /* Ignore no-change rows */
-        if (empty($flagged) && empty($unflagged)) {
-            $lastFlagId = $currentId;
-            continue;
         }
 
         /* Build admin notification message */
         $message = "<span class='highlight-user'>{$flagger}</span> ";
 
-        if (!empty($unflagged)) {
+        if (!empty($unflagged) && !empty($flagged)) {
+            // Both unflagging and reflagging
+            $message .= "has un-flagged the article <strong>{$row['title']}</strong> as "
+                     . implode(', ', $unflagged)
+                     . " and re-flagged it as " . implode(', ', $flagged);
+        } elseif (!empty($unflagged)) {
+            // Only unflagging
             $message .= "has un-flagged the article <strong>{$row['title']}</strong> as "
                      . implode(', ', $unflagged);
-            if (!empty($flagged)) {
-                $message .= " and flagged it as " . implode(', ', $flagged);
+        } elseif (!empty($flagged)) {
+            // Only flagging (first time or reflagging)
+            if ($prevFlags['flagabusive'] == 0 && $prevFlags['flagspam'] == 0 && $prevFlags['flagcopyright'] == 0) {
+                // First time flagging
+                $message .= "flagged <strong>{$row['title']}</strong> as "
+                         . implode(', ', $flagged);
+            } else {
+                // Reflagging different flags
+                $message .= "has updated flags for <strong>{$row['title']}</strong> to "
+                         . implode(', ', $flagged);
             }
         } else {
-            $message .= "flagged <strong>{$row['title']}</strong> as "
-                     . implode(', ', $flagged);
+            // No changes - shouldn't happen since we check above
+            $lastFlagId = $currentId;
+            continue;
         }
 
         echo json_encode([
