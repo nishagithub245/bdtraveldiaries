@@ -91,13 +91,10 @@ function listenForFlags() {
         url: 'notifications.php',
         type: 'POST',
         data: { lastFlagId: lastFlagId },
-        dataType: 'json', // ensure JSON parse
+        dataType: 'json',
         success: function (data) {
-            // sometimes PHP warnings may return empty or malformed JSON
-            if (!data) return setTimeout(listenForFlags, 3000);
-
-            // If a new flag record exists
-            if (data.flagnumber) {
+            // Check if we got valid data
+            if (data && data.flagnumber) {
                 const $notif = $(`
                     <div class="notification new-notification">
                         <span class="notification-time">${data.time} GMT</span>
@@ -113,13 +110,14 @@ function listenForFlags() {
 
                 lastFlagId = data.flagnumber;
             }
-
-            // Keep polling immediately
-            listenForFlags();
+            
+            // Continue polling after 1 second
+            setTimeout(listenForFlags, 1000);
         },
         error: function (xhr, status, err) {
             console.error("Admin notifications error:", xhr.responseText || err);
-            setTimeout(listenForFlags, 5000); // retry after 5s
+            // Retry after 2 seconds on error
+            setTimeout(listenForFlags, 2000);
         }
     });
 }

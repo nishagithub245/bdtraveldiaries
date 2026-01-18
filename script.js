@@ -20,6 +20,11 @@ $(document).ready(function () {
         showUsernameSection();
     }
 
+
+    showUsernameSection();
+
+
+
     // Sign in button
     $('#signin-btn').on('click', function () {
         const username = $('#username').val().trim();
@@ -135,7 +140,7 @@ $(document).ready(function () {
         const flagCopyright = articleDiv.find('input[value="copyright"]').is(':checked') ? 1 : 0;
 
         reportBtn.prop('disabled', true);
-        reportBtn.text('Processing...');
+        // reportBtn.text('Processing...');
 
         $.ajax({
             url: 'flag_article.php',
@@ -182,9 +187,9 @@ $(document).ready(function () {
     });
 
     // Close flag options when clicking outside
-    $(document).on('click', function (event) {
-        if (!$(event.target).closest('.article-flagging').length) {
-            $('.flag-options').fadeOut(200);
-        }
-    });
+    // $(document).on('click', function (event) {
+    //     if (!$(event.target).closest('.article-flagging').length) {
+    //         $('.flag-options').fadeOut(200);
+    //     }
+    // });
 });

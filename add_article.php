@@ -14,8 +14,8 @@ if (empty($username) || empty($title) || empty($articletext)) {
 
 // Get current time in GMT for DB
 $now = new DateTime("now", new DateTimeZone("GMT"));
-$publishtime_db = $now->format('Y-m-d H:i:s');  // MySQL DATETIME format
-$publishtime_display = $now->format('d/m/Y - H:i:s') . ' GMT'; // For JS display
+$publishtime_db = $now->format('Y-m-d H:i:s');  
+$publishtime_display = $now->format('d/m/Y - H:i:s') . ' GMT'; 
 
 // Prepare and execute
 $sql = "INSERT INTO articles (username, title, articletext, publishtime) VALUES (?, ?, ?, ?)";
@@ -27,7 +27,7 @@ if (!$stmt) {
 $stmt->bind_param("ssss", $username, $title, $articletext, $publishtime_db);
 
 if ($stmt->execute()) {
-    $id = $stmt->insert_id; // get new article ID
+    $id = $stmt->insert_id; 
     echo json_encode([
         'status' => 'success',
         'id' => $id,

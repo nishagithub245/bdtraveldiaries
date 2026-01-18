@@ -31,6 +31,37 @@ if ($owner && $owner['username'] === $username) {
     exit;
 }
 
+// --- CHECK IF USER HAS ANY EXISTING FLAGS FOR THIS ARTICLE ---
+$checkStmt = $conn->prepare("
+    SELECT flagabusive, flagspam, flagcopyright 
+    FROM flags 
+    WHERE username = ? AND articlenumber = ? AND recorded = 1
+    ORDER BY flagnumber DESC 
+    LIMIT 1
+");
+$checkStmt->bind_param("si", $username, $articlenumber);
+$checkStmt->execute();
+$currentResult = $checkStmt->get_result();
+$hasExistingFlags = $currentResult->num_rows > 0;
+$current = $hasExistingFlags ? $currentResult->fetch_assoc() : null;
+$checkStmt->close();
+
+// --- CHECK IF ANY CHANGE OCCURRED ---
+$allowInsert = true;
+if ($hasExistingFlags && $current) {
+    // Check if flags are exactly the same
+    if ($current['flagabusive'] == $flagabusive &&
+        $current['flagspam'] == $flagspam &&
+        $current['flagcopyright'] == $flagcopyright) {
+        $allowInsert = false;
+    }
+}
+
+if (!$allowInsert) {
+    echo json_encode(["status" => "error", "message" => "No changes in flags"]);
+    exit;
+}
+
 // --- DEACTIVATE PREVIOUS ACTIVE FLAG ---
 $updateStmt = $conn->prepare("
     UPDATE flags 
@@ -50,31 +81,27 @@ $insertStmt = $conn->prepare("
 $insertStmt->bind_param("siiiis", $username, $articlenumber, $flagabusive, $flagspam, $flagcopyright, $time);
 
 if ($insertStmt->execute()) {
-    // Determine message
-    if ($flagabusive || $flagspam || $flagcopyright) {
-        // Check if this is first flag or update
-        $checkPrev = $conn->prepare("SELECT COUNT(*) as count FROM flags WHERE username = ? AND articlenumber = ?");
-        $checkPrev->bind_param("si", $username, $articlenumber);
-        $checkPrev->execute();
-        $count = $checkPrev->get_result()->fetch_assoc()['count'];
-        $checkPrev->close();
-        
-        $message = ($count > 1) ? "Flags updated successfully" : "Article flagged successfully";
-    } else {
+    // Determine what action was taken
+    $prevAbusive = $current ? $current['flagabusive'] : 0;
+    $prevSpam = $current ? $current['flagspam'] : 0;
+    $prevCopyright = $current ? $current['flagcopyright'] : 0;
+    
+    $wasAnyFlag = ($prevAbusive || $prevSpam || $prevCopyright);
+    $isAnyFlag = ($flagabusive || $flagspam || $flagcopyright);
+    
+    if (!$wasAnyFlag && $isAnyFlag) {
+        $message = "Article flagged successfully";
+    } elseif ($wasAnyFlag && !$isAnyFlag) {
         $message = "Article unflagged successfully";
+    } elseif ($wasAnyFlag && $isAnyFlag) {
+        $message = "Flags updated successfully";
+    } else {
+        $message = "Flag preferences saved";
     }
     
     echo json_encode(["status" => "success", "message" => $message]);
 } else {
-    // If still getting duplicate error, the constraint wasn't removed
-    if (strpos($insertStmt->error, "Duplicate") !== false) {
-        echo json_encode([
-            "status" => "error", 
-            "message" => "Database constraint error. Please run: ALTER TABLE flags DROP INDEX unique_flag;"
-        ]);
-    } else {
-        echo json_encode(["status" => "error", "message" => "Database error: " . $insertStmt->error]);
-    }
+    echo json_encode(["status" => "error", "message" => $insertStmt->error]);
 }
 
 $insertStmt->close();
