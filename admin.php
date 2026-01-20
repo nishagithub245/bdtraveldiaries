@@ -64,6 +64,22 @@ body {
 .new-notification {
     background: #f9f1a5 !important;
 }
+
+
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
 </style>
 </head>
 
